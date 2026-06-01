@@ -11,6 +11,9 @@
 #include "tiny_obj_loader.h"
 
 #include "object.h"
+#include "physicsWorld.h"
+
+#include "phase1FireworkSpawner.h"
 
 #include "chrono"
 using namespace std::chrono_literals;
@@ -102,7 +105,7 @@ int main()
     if (!glfwInit())
         return -1;
 
-    GLFWwindow* window = glfwCreateWindow(windowWidth, windowHeight, "Hello World", NULL, NULL);
+    GLFWwindow* window = glfwCreateWindow(windowWidth, windowHeight, "PC01 Eric Franco", NULL, NULL);
     if (!window)
     {
         glfwTerminate();
@@ -127,11 +130,46 @@ int main()
     vector<GLfloat> fullVertexData;
     vector<MeshData> meshes;
 
-    //static colors
-	vec3 white = vec3(1.f, 1.f, 1.f);
-	vec3 red = vec3(1.f, 0.f, 0.f);
+    //static colors, 19
+    vec3 white = vec3(1.f, 1.f, 1.f);
+    vec3 black = vec3(0.f, 0.f, 0.f);
+    vec3 red = vec3(1.f, 0.f, 0.f);
+    vec3 green = vec3(0.f, 1.f, 0.f);
+    vec3 blue = vec3(0.f, 0.f, 1.f);
+    vec3 yellow = vec3(1.f, 1.f, 0.f);
+    vec3 cyan = vec3(0.f, 1.f, 1.f);
+    vec3 magenta = vec3(1.f, 0.f, 1.f);
+    vec3 orange = vec3(1.f, 0.5f, 0.f);
+    vec3 purple = vec3(0.5f, 0.f, 1.f);
+    vec3 pink = vec3(1.f, 0.4f, 0.7f);
+    vec3 gray = vec3(0.5f, 0.5f, 0.5f);
+    vec3 darkGray = vec3(0.2f, 0.2f, 0.2f);
+    vec3 lightGray = vec3(0.8f, 0.8f, 0.8f);
+    vec3 brown = vec3(0.6f, 0.3f, 0.1f);
+    vec3 lime = vec3(0.6f, 1.f, 0.f);
+    vec3 skyBlue = vec3(0.4f, 0.8f, 1.f);
+    vec3 navy = vec3(0.0f, 0.0f, 0.5f);
+    vec3 teal = vec3(0.f, 0.5f, 0.5f);
 
 	meshes.push_back(loadModel("3D/sphere.obj", white, fullVertexData));
+    meshes.push_back(loadModel("3D/sphere.obj", black, fullVertexData));
+    meshes.push_back(loadModel("3D/sphere.obj", red, fullVertexData));
+    meshes.push_back(loadModel("3D/sphere.obj", green, fullVertexData));
+    meshes.push_back(loadModel("3D/sphere.obj", blue, fullVertexData));
+	meshes.push_back(loadModel("3D/sphere.obj", yellow, fullVertexData));
+	meshes.push_back(loadModel("3D/sphere.obj", cyan, fullVertexData));
+	meshes.push_back(loadModel("3D/sphere.obj", magenta, fullVertexData));
+	meshes.push_back(loadModel("3D/sphere.obj", orange, fullVertexData));
+	meshes.push_back(loadModel("3D/sphere.obj", purple, fullVertexData));
+	meshes.push_back(loadModel("3D/sphere.obj", pink, fullVertexData));
+	meshes.push_back(loadModel("3D/sphere.obj", gray, fullVertexData));
+	meshes.push_back(loadModel("3D/sphere.obj", darkGray, fullVertexData));
+	meshes.push_back(loadModel("3D/sphere.obj", lightGray, fullVertexData));
+	meshes.push_back(loadModel("3D/sphere.obj", brown, fullVertexData));
+	meshes.push_back(loadModel("3D/sphere.obj", lime, fullVertexData));
+	meshes.push_back(loadModel("3D/sphere.obj", skyBlue, fullVertexData));
+	meshes.push_back(loadModel("3D/sphere.obj", navy, fullVertexData));
+    meshes.push_back(loadModel("3D/sphere.obj", teal, fullVertexData));
 	// end of model loading -------------------------------------------
 
     GLuint VBO, VAO;
@@ -153,20 +191,30 @@ int main()
     glBindVertexArray(0);
 
 	// Load objects ------------------------------------------------
-	vector<Object> objects;
-	//position, scale, mesh index
-	objects.push_back(Object(vec3(0, 0, 0), vec3(1, 1, 1), 0));
+	PhysicsWorld* world = new PhysicsWorld();
+
+	vec3 scale = vec3(5);
+    float mass = 1;
+
+	//position, scale, mass, gravity, mesh index
+	//world->addParticle(new Object(vec3(0), scale, mass, -1, 0));
+ //   world.addParticle(new Object(vec3(300, 300, 173), scale, mass, 1));
+ //   world.addParticle(new Object(vec3(-300, -300, -300), scale, mass, 2));
+ //   world.addParticle(new Object(vec3(300, -300, -150), scale, mass, 3));
 	// end of object loading ---------------------------------------
 
-	objects[0].velocity = vec3(1, 0, 0);
-	//objects[0].acceleration = vec3(-1, 0, 0);
+    //phase 1 stuff
+    int count = 0;
+    cout << "Max number of fireworks: ";
+    cin >> count;
+	FireworkSpawner spawner(world, count);
 
     mat4 proj = ortho(
-        -2.f, 2.f,
-        -2.f, 2.f,
-        -100.f, 100.f
+        -350.f, 350.f,
+        -350.f, 350.f,
+        -100.f, 1000.f
     );
-    vec3 camPos = vec3(0.f, 0.f, 10.f);
+    vec3 camPos = vec3(0.f, 0.f, 350.f);
     //camPos *= -1;
     vec3 worldUp = vec3(0.f, 1.0f, 0.f);
     vec3 camCenter = vec3(0.f, 0.f, 0.f);
@@ -181,10 +229,6 @@ int main()
     unsigned int projLoc = glGetUniformLocation(shaderProgram, "projection");
     unsigned int viewLoc = glGetUniformLocation(shaderProgram, "view");
     unsigned int objectColorLoc = glGetUniformLocation(shaderProgram, "objectColor");
-
-    //hw 1 stuff
-    float border = 1;
-    Object* orb = &objects[0];
 
     while (!glfwWindowShouldClose(window))
     {
@@ -203,28 +247,24 @@ int main()
         //physics calls
         if(currentNS >= timestep)
         {
+			//cout << "physics call" << endl;
             constexpr float timestepSec = timestep.count() / (float)(1E09);
 			currentNS -= timestep;
 
-            //hw 1 stuff
-            if(orb->position.x > border)
-                orb->velocity.x = -1;
-            else if(orb->position.x < -border)
-				orb->velocity.x = 1;
+			world->update(timestepSec);
 
-            for (Object& obj : objects)
-				obj.updateParticle(timestepSec);
+            //phase 1 stuff
+			spawner.update(timestepSec);
 		}
 
 		//rendering calls
-        for (Object& obj : objects)
+        for (Object* obj : world->particles)
         {
-            mat4 transform = obj.GetTransform();
+            mat4 transform = obj->GetTransform();
             glUniformMatrix4fv(transformLoc, 1, GL_FALSE, value_ptr(transform));
-            glUniform3fv(objectColorLoc, 1, value_ptr(meshes[obj.getMeshIndex()].color));
-
+            glUniform3fv(objectColorLoc, 1, value_ptr(meshes[obj->getMeshIndex()].color));
             glBindVertexArray(VAO);
-			glDrawArrays(GL_TRIANGLES, meshes[obj.getMeshIndex()].startVertex, meshes[obj.getMeshIndex()].vertexCount);
+			glDrawArrays(GL_TRIANGLES, meshes[obj->getMeshIndex()].startVertex, meshes[obj->getMeshIndex()].vertexCount);
         }
 
         glfwSwapBuffers(window);

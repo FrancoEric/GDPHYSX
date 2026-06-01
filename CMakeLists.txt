@@ -44,7 +44,7 @@ find_package(OpenGL REQUIRED)
 
 target_link_libraries(glad PUBLIC OpenGL::GL)
 
-add_executable (gdphysx "gdphysx.cpp"  "tiny_obj_loader.h" "object.h")
+add_executable (gdphysx "gdphysx.cpp"  "tiny_obj_loader.h" "object.h" "physicsWorld.h" "phase1FireworkSpawner.h")
 
 target_link_libraries(gdphysx
     PRIVATE
