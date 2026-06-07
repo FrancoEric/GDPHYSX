@@ -59,16 +59,6 @@ class FireworkSpawner
 		return dist(gen);
 	}
 
-	vec3 getSpawnPosition()
-	{
-    	return spawnPoint;
-	}
-
-	void setSpawnPosition(vec3 pos)
-	{
-    	spawnPoint = pos;
-	}
-
 	public:
 		FireworkSpawner(PhysicsWorld* world, int fireworkCount)
 		{
@@ -89,4 +79,15 @@ class FireworkSpawner
 				}
 			}
 		}
+
+		vec3 getSpawnPosition()
+		{
+			return this->spawnPoint;
+		}
+
+		void setSpawnPosition(vec3 pos)
+		{
+			spawnPoint = pos;
+		}
+
 };
