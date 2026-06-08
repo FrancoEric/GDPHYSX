@@ -150,7 +150,7 @@ public:
     // set the object we orbit around
     void setTarget(vec3 t)
     {
-        target = t + vec3(0.0f, 200.f, 0.0f);
+        target = t;
     }
 
     bool isFirstPerson()
@@ -179,7 +179,6 @@ public:
 
         if (!firstPerson)
         {
-            // orbit only in third person
             camPos.x = target.x + radius * cos(radians(yaw)) * cos(radians(pitch));
             camPos.y = target.y + radius * sin(radians(pitch));
             camPos.z = target.z + radius * sin(radians(yaw)) * cos(radians(pitch));
@@ -261,16 +260,16 @@ private:
     float nearPlane = 0.1f;
     float farPlane = 1000.f;
 
+    float radius = 50.f; // distance from target when following
+    vec3 target = vec3(0.f);
+
 public:
     OrthographicCamera(float w, float h) : Camera(w, h)
     {
-        // position camera above the scene
-        camPos = vec3(0.f, 40.f, 0.f);
+        worldUp = vec3(0.f, 1.f, 0.f);
 
-        // look straight down
-        camCenter = vec3(0.f, 0.f, 0.f);
-
-        worldUp = vec3(0.f, 0.f, -1.f);
+        pitch = -45.f;
+        yaw = -90.f;
     }
 
     void updateProjection() override
@@ -291,6 +290,34 @@ public:
         camPos.z += z;
         camCenter.x += x;
         camCenter.z += z;
+    }
+
+    void followTarget(vec3 t)
+    {
+        target = t;
+
+        camPos.x = target.x + radius * cos(radians(yaw)) * cos(radians(pitch));
+        camPos.y = target.y + radius * sin(radians(pitch));
+        camPos.z = target.z + radius * sin(radians(yaw)) * cos(radians(pitch));
+
+        camCenter = target;
+    }
+
+    void rotateCam(float xoffset, float yoffset) override
+    {
+        float sensitivity = 0.1f;
+
+        yaw += xoffset * sensitivity;
+        pitch += yoffset * sensitivity;
+
+        if (pitch > 89.f) pitch = 89.f;
+        if (pitch < -89.f) pitch = -89.f;
+
+        camPos.x = target.x + radius * cos(radians(yaw)) * cos(radians(pitch));
+        camPos.y = target.y + radius * sin(radians(pitch));
+        camPos.z = target.z + radius * sin(radians(yaw)) * cos(radians(pitch));
+
+        camCenter = target;
     }
     
 };

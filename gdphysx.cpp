@@ -37,7 +37,7 @@ float camPanSpeed = 0.5f;
 bool physicsPaused = false;
 
 vec3 spawnerFocusPos = vec3(0.f);
-vec3 spawnerPosOffset = vec3(0.f, 200.0f, 0.f);
+vec3 spawnerPosOffset = vec3(0.f, 200.0f, 0.f); // offsets the camera focus to be above the spawner
 
 Camera* cameraPtr;
 PerspectiveCamera* perspectiveCamPtr;
@@ -70,40 +70,40 @@ void Key_Callback(GLFWwindow* window, int key, int scancode, int action, int mod
 {
     
     // top down camera panning
-    if (cameraPtr == orthoCamPtr) 
+    if (cameraPtr == orthoCamPtr)
     {
-        if (key == GLFW_KEY_W && (action == GLFW_PRESS || action == GLFW_REPEAT))
-            orthoCamPtr->pan(0.f, camPanSpeed);
-        else if (key == GLFW_KEY_S && (action == GLFW_PRESS || action == GLFW_REPEAT))
-            orthoCamPtr->pan(0.f, -camPanSpeed);
-
         if (key == GLFW_KEY_A && (action == GLFW_PRESS || action == GLFW_REPEAT))
-            orthoCamPtr->pan(-camPanSpeed, 0.f);
+            orthoCamPtr->rotateCam(-5.f, 0.f);
+
         else if (key == GLFW_KEY_D && (action == GLFW_PRESS || action == GLFW_REPEAT))
-            orthoCamPtr->pan(camPanSpeed, 0.f);
+            orthoCamPtr->rotateCam(5.f, 0.f);
+
+        if (key == GLFW_KEY_W && (action == GLFW_PRESS || action == GLFW_REPEAT))
+            orthoCamPtr->rotateCam(0.f, 5.f);
+
+        else if (key == GLFW_KEY_S && (action == GLFW_PRESS || action == GLFW_REPEAT))
+            orthoCamPtr->rotateCam(0.f, -5.f);
     }
 
-    if (cameraPtr == perspectiveCamPtr)
+    if (cameraPtr == perspectiveCamPtr && !perspectiveCamPtr->isFirstPerson())
     {
-        if (key == GLFW_KEY_W && (action == GLFW_PRESS || action == GLFW_REPEAT))
-            perspectiveCamPtr->moveForward(camMoveSpeed);
-
-        else if (key == GLFW_KEY_S && (action == GLFW_PRESS || action == GLFW_REPEAT))
-            perspectiveCamPtr->moveForward(-camMoveSpeed);
-
         if (key == GLFW_KEY_A && (action == GLFW_PRESS || action == GLFW_REPEAT))
-            perspectiveCamPtr->moveRight(-camMoveSpeed);
+            perspectiveCamPtr->rotateCam(-5.f, 0.f);
 
         else if (key == GLFW_KEY_D && (action == GLFW_PRESS || action == GLFW_REPEAT))
-            perspectiveCamPtr->moveRight(camMoveSpeed);
+            perspectiveCamPtr->rotateCam(5.f, 0.f);
+
+        if (key == GLFW_KEY_W && (action == GLFW_PRESS || action == GLFW_REPEAT))
+            perspectiveCamPtr->rotateCam(0.f, 5.f);
+
+        else if (key == GLFW_KEY_S && (action == GLFW_PRESS || action == GLFW_REPEAT))
+            perspectiveCamPtr->rotateCam(0.f, -5.f);
     }
     
     // camera switching
     if (key == GLFW_KEY_1 && action == GLFW_PRESS) {
         perspectiveCamPtr->setFirstPerson(true); // first person
-        perspectiveCamPtr->followTarget(spawnerFocusPos); // snaps position
         cameraPtr = perspectiveCamPtr; // switches back to persp if was on ortho
-        firstMouse = true;
     }
     
     if (key == GLFW_KEY_2 && action == GLFW_PRESS){
@@ -111,12 +111,10 @@ void Key_Callback(GLFWwindow* window, int key, int scancode, int action, int mod
         glfwSetInputMode(window, GLFW_CURSOR, GLFW_CURSOR_NORMAL); // unlocks mouse when using topdown camera
     }
     
-    if (key == GLFW_KEY_3 && action == GLFW_PRESS) {
+    /*if (key == GLFW_KEY_3 && action == GLFW_PRESS) {
         perspectiveCamPtr->setFirstPerson(false); // third person
-        perspectiveCamPtr->followTarget(spawnerFocusPos);
         cameraPtr = perspectiveCamPtr; // same thing lmao, should fix the inconsistent switching
-        firstMouse = true;
-    }
+    }*/
     
     if (key == GLFW_KEY_E && (action == GLFW_PRESS || action == GLFW_REPEAT))
     {
@@ -358,9 +356,14 @@ int main()
 
         //glUniformMatrix4fv(projLoc, 1, GL_FALSE, value_ptr(proj));
         //glUniformMatrix4fv(viewLoc, 1, GL_FALSE, value_ptr(view));
-        cameraPtr->Update(shaderProgram); // already done in class function
+
         spawnerFocusPos = spawner.getSpawnPosition();
 
+        perspectiveCamPtr->followTarget(spawnerFocusPos + spawnerPosOffset);
+        orthoCamPtr->followTarget(spawnerFocusPos + spawnerPosOffset);
+
+        cameraPtr->Update(shaderProgram);
+        
 		currentTime = clock::now();
 		auto dur = std::chrono::duration_cast<std::chrono::nanoseconds>(currentTime - prevTime);
 		prevTime = currentTime;
