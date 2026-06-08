@@ -138,7 +138,7 @@ private:
     bool firstPerson = false;
     vec3 fpOffset = vec3(0.f, 5.0f, 0.f); // eye height offset, change as needed
     
-    float radius = 15.f; // distance from object
+    float radius = 200.f; // distance from object
     vec3 target = vec3(0.f); // main object position
 
 public:
@@ -260,7 +260,7 @@ private:
     float nearPlane = 0.1f;
     float farPlane = 1000.f;
 
-    float radius = 50.f; // distance from target when following
+    float radius = 200.f; // distance from target when following
     vec3 target = vec3(0.f);
 
 public:

@@ -37,7 +37,7 @@ float camPanSpeed = 0.5f;
 bool physicsPaused = false;
 
 vec3 spawnerFocusPos = vec3(0.f);
-vec3 spawnerPosOffset = vec3(0.f, 200.0f, 0.f); // offsets the camera focus to be above the spawner
+vec3 spawnerPosOffset = vec3(0.f, 30.0f, 0.f); // offsets the camera focus to be above the spawner
 
 Camera* cameraPtr;
 PerspectiveCamera* perspectiveCamPtr;
