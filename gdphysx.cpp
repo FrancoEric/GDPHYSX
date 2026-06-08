@@ -34,6 +34,8 @@ float camx = 0;
 float camMoveSpeed = 1.f;
 float camPanSpeed = 0.5f;
 
+bool physicsPaused = false;
+
 vec3 spawnerFocusPos = vec3(0.f);
 
 Camera* cameraPtr;
@@ -79,13 +81,27 @@ void Key_Callback(GLFWwindow* window, int key, int scancode, int action, int mod
         else if (key == GLFW_KEY_D && (action == GLFW_PRESS || action == GLFW_REPEAT))
             orthoCamPtr->pan(camPanSpeed, 0.f);
     }
+
+    if (cameraPtr == perspectiveCamPtr)
+    {
+        if (key == GLFW_KEY_W && (action == GLFW_PRESS || action == GLFW_REPEAT))
+            perspectiveCamPtr->moveForward(camMoveSpeed);
+
+        else if (key == GLFW_KEY_S && (action == GLFW_PRESS || action == GLFW_REPEAT))
+            perspectiveCamPtr->moveForward(-camMoveSpeed);
+
+        if (key == GLFW_KEY_A && (action == GLFW_PRESS || action == GLFW_REPEAT))
+            perspectiveCamPtr->moveRight(-camMoveSpeed);
+
+        else if (key == GLFW_KEY_D && (action == GLFW_PRESS || action == GLFW_REPEAT))
+            perspectiveCamPtr->moveRight(camMoveSpeed);
+    }
     
     // camera switching
     if (key == GLFW_KEY_1 && action == GLFW_PRESS) {
         perspectiveCamPtr->setFirstPerson(true); // first person
         perspectiveCamPtr->followTarget(spawnerFocusPos); // snaps position
         cameraPtr = perspectiveCamPtr; // switches back to persp if was on ortho
-        glfwSetInputMode(window, GLFW_CURSOR, GLFW_CURSOR_DISABLED);
         firstMouse = true;
     }
     
@@ -98,7 +114,6 @@ void Key_Callback(GLFWwindow* window, int key, int scancode, int action, int mod
         perspectiveCamPtr->setFirstPerson(false); // third person
         perspectiveCamPtr->followTarget(spawnerFocusPos);
         cameraPtr = perspectiveCamPtr; // same thing lmao, should fix the inconsistent switching
-        glfwSetInputMode(window, GLFW_CURSOR, GLFW_CURSOR_DISABLED);
         firstMouse = true;
     }
     
@@ -111,6 +126,11 @@ void Key_Callback(GLFWwindow* window, int key, int scancode, int action, int mod
     {
         if (perspectiveCamPtr->isFirstPerson())
             perspectiveCamPtr->adjustFov(2.f);  // zoom out
+    }
+
+    if (key == GLFW_KEY_SPACE && action == GLFW_PRESS)
+    {
+        physicsPaused = !physicsPaused;
     }
 }
 
@@ -212,8 +232,6 @@ int main()
     cameraPtr = perspectiveCamPtr;
     
     glfwSetKeyCallback(window, Key_Callback);
-    glfwSetCursorPosCallback(window, Mouse_Callback);
-    glfwSetInputMode(window, GLFW_CURSOR, GLFW_CURSOR_DISABLED);
 
     if (!gladLoadGLLoader((GLADloadproc)glfwGetProcAddress))
     {
@@ -354,10 +372,11 @@ int main()
             constexpr float timestepSec = timestep.count() / (float)(1E09);
 			currentNS -= timestep;
 
-			world->update(timestepSec);
-
-            //phase 1 stuff
-			spawner.update(timestepSec);
+            if(!physicsPaused){ // updates only if physics isnt paused by space 
+			    world->update(timestepSec);
+                //phase 1 stuff
+			    spawner.update(timestepSec);
+            }
 		}
 
 		//rendering calls
