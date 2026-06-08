@@ -133,7 +133,7 @@ class PerspectiveCamera : public Camera
 private:
     float fov = 60.f;
     float nearPlane = 0.1f;
-    float farPlane = 100.f;
+    float farPlane = 1000.f;
 
     bool firstPerson = false;
     vec3 fpOffset = vec3(0.f, 5.0f, 0.f); // eye height offset, change as needed
@@ -150,7 +150,7 @@ public:
     // set the object we orbit around
     void setTarget(vec3 t)
     {
-        target = t;
+        target = t + vec3(0.0f, 200.f, 0.0f);
     }
 
     bool isFirstPerson()
@@ -259,7 +259,7 @@ private:
     float top = 30.f;
 
     float nearPlane = 0.1f;
-    float farPlane = 100.f;
+    float farPlane = 1000.f;
 
 public:
     OrthographicCamera(float w, float h) : Camera(w, h)

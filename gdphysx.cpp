@@ -37,6 +37,7 @@ float camPanSpeed = 0.5f;
 bool physicsPaused = false;
 
 vec3 spawnerFocusPos = vec3(0.f);
+vec3 spawnerPosOffset = vec3(0.f, 200.0f, 0.f);
 
 Camera* cameraPtr;
 PerspectiveCamera* perspectiveCamPtr;
@@ -217,7 +218,7 @@ int main()
     if (!glfwInit())
         return -1;
 
-    GLFWwindow* window = glfwCreateWindow(windowWidth, windowHeight, "PC01 Eric Franco", NULL, NULL);
+    GLFWwindow* window = glfwCreateWindow(windowWidth, windowHeight, "DayCO Engine", NULL, NULL);
     if (!window)
     {
         glfwTerminate();
