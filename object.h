@@ -10,12 +10,10 @@ class Object
 	float rotationAngleX;
 	float rotationAngleY;
 	float rotationAngleZ;
-	vec3 velocity;
 	vec3 acceleration;
 	vec3 force;
 	float lifespan;
 	float lifespanCounter;
-	float gravity;
 
 	void updatePos(float deltaTime)
 	{
@@ -45,19 +43,22 @@ class Object
 
 	public:
 		vec3 position; //stays in public for rendering
-		vec3 targetPos;
+		vec3 targetPos; //useless rn 
+		vec3 velocity;
 		bool stopMoving;
 		bool isDestroyed;
 		float damping;
 		float mass; //in kgs
+		float radius;
+		float restitution;
 
-		Object(vec3 position, vec3 scale, float mass, float gravity, int meshIndex) 
+		Object(vec3 position, vec3 scale, float mass, float resti, int meshIndex) 
 		{
 			this->position = position;
 			this->Scale = scale;
 			this->meshIndex = meshIndex;
 			this->mass = mass;
-			this->gravity = gravity;
+			this->restitution = resti;
 			rotationAngleX = 0;
 			rotationAngleY = 0;
 			rotationAngleZ = 0;
@@ -69,6 +70,7 @@ class Object
 			force = vec3(0);
 			lifespan = -1; //defaults to no lifespan
 			lifespanCounter = lifespan;
+			radius = scale.x;
 		}
 
 		void updateParticle(float deltaTime)
@@ -77,7 +79,7 @@ class Object
 				return;
 
 			//cout << "gravity: " << gravity << endl;
-			addForce(vec3(0, gravity, 0));
+			//addForce(vec3(0, gravity, 0));
 			//cout << "force: " << force.x << ", " << force.y << ", " << force.z << endl;
 
 			updatePos(deltaTime);
@@ -99,11 +101,6 @@ class Object
 		void addForce(vec3 newForce)
 		{
 			force += newForce;
-		}
-
-		void setGravity(float gravity)
-		{
-			gravity = gravity;
 		}
 
 		void resetForce()
@@ -139,5 +136,10 @@ class Object
 			transform = scale(transform, Scale);
 
 			return transform;
+		}
+
+		vec3 getVel()
+		{
+			return velocity;
 		}
 };

@@ -12,10 +12,20 @@
 
 #include "object.h"
 #include "physicsWorld.h"
+#include "forceGenerator.h"
+#include "forceRegistry.h"
+#include "gravityForceGenerator.h"
+#include "dragForceGenerator.h"
+#include "anchoredSpring.h"
+#include "particleSpring.h"
+#include "bungeeSpring.h"
+#include "particleContact.h"
+#include "contactResolver.h"
+#include "particleLink.h"
+#include "rod.h"
+#include "chain.h"
 
-#include "phase1FireworkSpawner.h"
-
-#include "camera.h"
+//#include "phase1FireworkSpawner.h"
 
 #include "chrono"
 using namespace std::chrono_literals;
@@ -25,115 +35,6 @@ using namespace glm;
 
 float windowWidth = 800;
 float windowHeight = 800;
-
-bool firstMouse = true;
-float lastX = windowWidth / 2.f;
-float lastY = windowHeight / 2.f;
-
-float camx = 0;
-float camMoveSpeed = 1.f;
-float camPanSpeed = 0.5f;
-
-bool physicsPaused = false;
-
-vec3 spawnerFocusPos = vec3(0.f);
-vec3 spawnerPosOffset = vec3(0.f, 30.0f, 0.f); // offsets the camera focus to be above the spawner
-
-Camera* cameraPtr;
-PerspectiveCamera* perspectiveCamPtr;
-OrthographicCamera* orthoCamPtr;
-
-//mouse to look
-void Mouse_Callback(GLFWwindow* window, double xpos, double ypos)
-
-{
-    if (firstMouse)
-    {
-        lastX = xpos;
-        lastY = ypos;
-        firstMouse = false;
-    }
-
-    float xoffset = xpos - lastX;
-    float yoffset = ypos - lastY;
-
-    lastX = xpos;
-    lastY = ypos;
-
-    // only allows camera movement for perspective
-    if (cameraPtr == perspectiveCamPtr)
-        cameraPtr->rotateCam(xoffset, yoffset);
-}
-
-//wasd to move, qe to go up and down, space to spawn obj 
-void Key_Callback(GLFWwindow* window, int key, int scancode, int action, int mods)
-{
-    
-    // top down camera panning
-    if (cameraPtr == orthoCamPtr)
-    {
-        if (key == GLFW_KEY_A && (action == GLFW_PRESS || action == GLFW_REPEAT))
-            orthoCamPtr->rotateCam(-5.f, 0.f);
-
-        else if (key == GLFW_KEY_D && (action == GLFW_PRESS || action == GLFW_REPEAT))
-            orthoCamPtr->rotateCam(5.f, 0.f);
-
-        if (key == GLFW_KEY_W && (action == GLFW_PRESS || action == GLFW_REPEAT))
-            orthoCamPtr->rotateCam(0.f, 5.f);
-
-        else if (key == GLFW_KEY_S && (action == GLFW_PRESS || action == GLFW_REPEAT))
-            orthoCamPtr->rotateCam(0.f, -5.f);
-    }
-
-    if (cameraPtr == perspectiveCamPtr && !perspectiveCamPtr->isFirstPerson())
-    {
-        if (key == GLFW_KEY_A && (action == GLFW_PRESS || action == GLFW_REPEAT))
-            perspectiveCamPtr->rotateCam(-5.f, 0.f);
-
-        else if (key == GLFW_KEY_D && (action == GLFW_PRESS || action == GLFW_REPEAT))
-            perspectiveCamPtr->rotateCam(5.f, 0.f);
-
-        if (key == GLFW_KEY_W && (action == GLFW_PRESS || action == GLFW_REPEAT))
-            perspectiveCamPtr->rotateCam(0.f, 5.f);
-
-        else if (key == GLFW_KEY_S && (action == GLFW_PRESS || action == GLFW_REPEAT))
-            perspectiveCamPtr->rotateCam(0.f, -5.f);
-    }
-    
-    // camera switching
-    if (key == GLFW_KEY_1 && action == GLFW_PRESS) {
-        perspectiveCamPtr->setFirstPerson(true); // first person
-        cameraPtr = perspectiveCamPtr; // switches back to persp if was on ortho
-    }
-    
-    if (key == GLFW_KEY_2 && action == GLFW_PRESS){
-        cameraPtr = orthoCamPtr;
-        glfwSetInputMode(window, GLFW_CURSOR, GLFW_CURSOR_NORMAL); // unlocks mouse when using topdown camera
-    }
-    
-    /*if (key == GLFW_KEY_3 && action == GLFW_PRESS) {
-        perspectiveCamPtr->setFirstPerson(false); // third person
-        cameraPtr = perspectiveCamPtr; // same thing lmao, should fix the inconsistent switching
-    }*/
-    
-    if (key == GLFW_KEY_E && (action == GLFW_PRESS || action == GLFW_REPEAT))
-    {
-        if (perspectiveCamPtr->isFirstPerson())
-            perspectiveCamPtr->adjustFov(-2.f); // zoom in
-    }
-    else if (key == GLFW_KEY_Q && (action == GLFW_PRESS || action == GLFW_REPEAT))
-    {
-        if (perspectiveCamPtr->isFirstPerson())
-            perspectiveCamPtr->adjustFov(2.f);  // zoom out
-    }
-
-    if (key == GLFW_KEY_SPACE && action == GLFW_PRESS)
-    {
-        physicsPaused = !physicsPaused;
-    }
-}
-
-
 
 GLuint loadShaders()
 {
@@ -216,7 +117,7 @@ int main()
     if (!glfwInit())
         return -1;
 
-    GLFWwindow* window = glfwCreateWindow(windowWidth, windowHeight, "DayCO Engine", NULL, NULL);
+    GLFWwindow* window = glfwCreateWindow(windowWidth, windowHeight, "Assignment4 Eric Franco", NULL, NULL);
     if (!window)
     {
         glfwTerminate();
@@ -224,13 +125,6 @@ int main()
     }
 
     glfwMakeContextCurrent(window);
-
-    perspectiveCamPtr = new PerspectiveCamera(windowWidth, windowHeight);
-    orthoCamPtr = new OrthographicCamera(windowWidth, windowHeight);
-
-    cameraPtr = perspectiveCamPtr;
-    
-    glfwSetKeyCallback(window, Key_Callback);
 
     if (!gladLoadGLLoader((GLADloadproc)glfwGetProcAddress))
     {
@@ -311,28 +205,24 @@ int main()
 	// Load objects ------------------------------------------------
 	PhysicsWorld* world = new PhysicsWorld();
 
-	vec3 scale = vec3(5);
+	vec3 scale = vec3(1);
+    vec3 scale2 = vec3(1.26);
     float mass = 1;
 
-	//position, scale, mass, gravity, mesh index
-	//world->addParticle(new Object(vec3(0), scale, mass, -1, 0));
- //   world.addParticle(new Object(vec3(300, 300, 173), scale, mass, 1));
- //   world.addParticle(new Object(vec3(-300, -300, -300), scale, mass, 2));
- //   world.addParticle(new Object(vec3(300, -300, -150), scale, mass, 3));
+	//position, scale, mass, restitution, mesh index
+	world->addParticle(new Object(vec3(0, 0, 0), scale, 1, 1, 0));
+    world->addParticle(new Object(vec3(5, 0, 0), scale2, 3, 1, 0));
+
+	world->particles[1]->velocity = vec3(-5, 0, 0);
 	// end of object loading ---------------------------------------
 
-    //phase 1 stuff
-    int count = 0;
-    cout << "Max number of fireworks: ";
-    cin >> count;
-	FireworkSpawner spawner(world, count);
-
+    float viewVal = 25;
     mat4 proj = ortho(
-        -350.f, 350.f,
-        -350.f, 350.f,
+        -viewVal, viewVal,
+        -viewVal, viewVal,
         -100.f, 1000.f
     );
-    vec3 camPos = vec3(0.f, 0.f, 350.f);
+    vec3 camPos = vec3(0.f, 0.f, 50.f);
     //camPos *= -1;
     vec3 worldUp = vec3(0.f, 1.0f, 0.f);
     vec3 camCenter = vec3(0.f, 0.f, 0.f);
@@ -354,16 +244,9 @@ int main()
 
         glUseProgram(shaderProgram);
 
-        //glUniformMatrix4fv(projLoc, 1, GL_FALSE, value_ptr(proj));
-        //glUniformMatrix4fv(viewLoc, 1, GL_FALSE, value_ptr(view));
+        glUniformMatrix4fv(projLoc, 1, GL_FALSE, value_ptr(proj));
+        glUniformMatrix4fv(viewLoc, 1, GL_FALSE, value_ptr(view));
 
-        spawnerFocusPos = spawner.getSpawnPosition();
-
-        perspectiveCamPtr->followTarget(spawnerFocusPos + spawnerPosOffset);
-        orthoCamPtr->followTarget(spawnerFocusPos + spawnerPosOffset);
-
-        cameraPtr->Update(shaderProgram);
-        
 		currentTime = clock::now();
 		auto dur = std::chrono::duration_cast<std::chrono::nanoseconds>(currentTime - prevTime);
 		prevTime = currentTime;
@@ -376,11 +259,7 @@ int main()
             constexpr float timestepSec = timestep.count() / (float)(1E09);
 			currentNS -= timestep;
 
-            if(!physicsPaused){ // updates only if physics isnt paused by space 
-			    world->update(timestepSec);
-                //phase 1 stuff
-			    spawner.update(timestepSec);
-            }
+			world->update(timestepSec);
 		}
 
 		//rendering calls

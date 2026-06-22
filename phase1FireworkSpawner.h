@@ -20,20 +20,19 @@ class FireworkSpawner
 	float minScale = 2;
 	float maxScale = 10;
 	float mass = 1;
-	float gravity = -10;
 	float minLifeSpan = 1;
 	float maxLifeSpan = 10;
 
 	//direction settings
-	float minVel = 3000;
-	float maxVel = 5000;
+	float minVel = 30000;
+	float maxVel = 50000;
 	float Hrange = 0.5f;
 	float minV = 0.4;
 	float maxV = 1;
 
 	Object* createFirework()
 	{
-		Object* firework = new Object(spawnPoint, vec3(randomFloat(minScale, maxScale)), mass, gravity, randomInt(0, maxMeshIndex));
+		Object* firework = new Object(spawnPoint, vec3(randomFloat(minScale, maxScale)), mass, randomInt(0, maxMeshIndex));
 		firework->addLifespan(randomFloat(minLifeSpan, maxLifeSpan));
 
 		vec3 dir = vec3(randomFloat(-Hrange, Hrange), randomFloat(minV, maxV), randomFloat(-Hrange, Hrange));
@@ -79,15 +78,4 @@ class FireworkSpawner
 				}
 			}
 		}
-
-		vec3 getSpawnPosition()
-		{
-			return this->spawnPoint;
-		}
-
-		void setSpawnPosition(vec3 pos)
-		{
-			spawnPoint = pos;
-		}
-
 };
