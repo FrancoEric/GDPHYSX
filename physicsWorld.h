@@ -33,6 +33,15 @@ class PhysicsWorld
 			contacts.push_back(newContact);
 		}
 
+		void applyForceToIndex(int index, vec3 force)
+		{
+			if(index < 0 || index >= particles.size())
+				return;
+
+			particles[index]->addForce(force);
+			//cout << "func called";
+		}
+
 		void addParticle(Object* particle)
 		{
 			particles.push_back(particle);
@@ -57,6 +66,11 @@ class PhysicsWorld
 			link->particles[1] = particles[index2];
 
 			links.push_back(link);
+		}
+
+		void setGravity(vec3 newGravity)
+		{
+			gravity.setGravity(newGravity);
 		}
 
 		void update(float deltaTime)

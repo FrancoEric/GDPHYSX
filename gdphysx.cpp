@@ -24,6 +24,8 @@
 #include "particleLink.h"
 #include "rod.h"
 #include "chain.h"
+#include "anchoredChain.h"
+#include "lineDrawable.h"
 
 //#include "phase1FireworkSpawner.h"
 
@@ -35,6 +37,16 @@ using namespace glm;
 
 float windowWidth = 800;
 float windowHeight = 800;
+
+bool spacePressed = false;
+
+void Key_Callback(GLFWwindow* window, int key, int scancode, int action, int mods)
+{
+    if (key == GLFW_KEY_SPACE && action == GLFW_PRESS)
+    {
+        spacePressed = true;
+    }
+}
 
 GLuint loadShaders()
 {
@@ -112,6 +124,14 @@ MeshData loadModel(const string& path, vec3 color, vector<float>& fullVertexData
     return mesh;
 }
 
+float askUserFloat(string text)
+{
+    float value;
+    cout << endl << text;
+    cin >> value;
+	return value;
+}
+
 int main()
 {
     if (!glfwInit())
@@ -133,6 +153,8 @@ int main()
     }
 
     glEnable(GL_DEPTH_TEST);
+
+    glfwSetKeyCallback(window, Key_Callback);
 
 
     //16ms per frame 
@@ -164,29 +186,31 @@ int main()
     vec3 teal = vec3(0.f, 0.5f, 0.5f);
 
 	meshes.push_back(loadModel("3D/sphere.obj", white, fullVertexData));
-    meshes.push_back(loadModel("3D/sphere.obj", black, fullVertexData));
-    meshes.push_back(loadModel("3D/sphere.obj", red, fullVertexData));
-    meshes.push_back(loadModel("3D/sphere.obj", green, fullVertexData));
-    meshes.push_back(loadModel("3D/sphere.obj", blue, fullVertexData));
-	meshes.push_back(loadModel("3D/sphere.obj", yellow, fullVertexData));
-	meshes.push_back(loadModel("3D/sphere.obj", cyan, fullVertexData));
-	meshes.push_back(loadModel("3D/sphere.obj", magenta, fullVertexData));
-	meshes.push_back(loadModel("3D/sphere.obj", orange, fullVertexData));
-	meshes.push_back(loadModel("3D/sphere.obj", purple, fullVertexData));
-	meshes.push_back(loadModel("3D/sphere.obj", pink, fullVertexData));
-	meshes.push_back(loadModel("3D/sphere.obj", gray, fullVertexData));
-	meshes.push_back(loadModel("3D/sphere.obj", darkGray, fullVertexData));
-	meshes.push_back(loadModel("3D/sphere.obj", lightGray, fullVertexData));
-	meshes.push_back(loadModel("3D/sphere.obj", brown, fullVertexData));
-	meshes.push_back(loadModel("3D/sphere.obj", lime, fullVertexData));
-	meshes.push_back(loadModel("3D/sphere.obj", skyBlue, fullVertexData));
-	meshes.push_back(loadModel("3D/sphere.obj", navy, fullVertexData));
-    meshes.push_back(loadModel("3D/sphere.obj", teal, fullVertexData));
+ //   meshes.push_back(loadModel("3D/sphere.obj", black, fullVertexData));
+ //   meshes.push_back(loadModel("3D/sphere.obj", red, fullVertexData));
+ //   meshes.push_back(loadModel("3D/sphere.obj", green, fullVertexData));
+ //   meshes.push_back(loadModel("3D/sphere.obj", blue, fullVertexData));
+	//meshes.push_back(loadModel("3D/sphere.obj", yellow, fullVertexData));
+	//meshes.push_back(loadModel("3D/sphere.obj", cyan, fullVertexData));
+	//meshes.push_back(loadModel("3D/sphere.obj", magenta, fullVertexData));
+	//meshes.push_back(loadModel("3D/sphere.obj", orange, fullVertexData));
+	//meshes.push_back(loadModel("3D/sphere.obj", purple, fullVertexData));
+	//meshes.push_back(loadModel("3D/sphere.obj", pink, fullVertexData));
+	//meshes.push_back(loadModel("3D/sphere.obj", gray, fullVertexData));
+	//meshes.push_back(loadModel("3D/sphere.obj", darkGray, fullVertexData));
+	//meshes.push_back(loadModel("3D/sphere.obj", lightGray, fullVertexData));
+	//meshes.push_back(loadModel("3D/sphere.obj", brown, fullVertexData));
+	//meshes.push_back(loadModel("3D/sphere.obj", lime, fullVertexData));
+	//meshes.push_back(loadModel("3D/sphere.obj", skyBlue, fullVertexData));
+	//meshes.push_back(loadModel("3D/sphere.obj", navy, fullVertexData));
+ //   meshes.push_back(loadModel("3D/sphere.obj", teal, fullVertexData));
 	// end of model loading -------------------------------------------
 
-    GLuint VBO, VAO;
+    GLuint VBO, VAO, lineVBO, lineVAO;
     glGenVertexArrays(1, &VAO);
+    glGenVertexArrays(1, &lineVAO);
     glGenBuffers(1, &VBO);
+    glGenBuffers(1, &lineVBO);
 
     GLuint shaderProgram = loadShaders();
 
@@ -199,24 +223,64 @@ int main()
     glVertexAttribPointer(1, 3, GL_FLOAT, GL_FALSE, 6 * sizeof(float), (void*)(3 * sizeof(float)));
     glEnableVertexAttribArray(1);
 
+    glBindVertexArray(lineVAO);
+    glBindBuffer(GL_ARRAY_BUFFER, lineVBO);
+
+    glBufferData(GL_ARRAY_BUFFER, sizeof(vec3) * 2, nullptr, GL_DYNAMIC_DRAW);
+    glVertexAttribPointer(0, 3, GL_FLOAT, GL_FALSE, sizeof(vec3), (void*)0);
+    glEnableVertexAttribArray(0);
+
     glBindBuffer(GL_ARRAY_BUFFER, 0);
     glBindVertexArray(0);
 
+    vec3 startPos = vec3(0), endPos = vec3(0);
+    vec3 lineVertices[2] =
+    {
+        startPos,
+        endPos
+    };
+
+    glBindBuffer(GL_ARRAY_BUFFER, lineVBO);
+    glBufferSubData(GL_ARRAY_BUFFER, 0, sizeof(lineVertices), lineVertices);
+
+    //phase 2 stuff 
+    float chainLength = askUserFloat("Chain length: ");
+    float particleGap = askUserFloat("Particle gap: ");
+    float particleRadius = askUserFloat("Particle radius: ");
+    float gravity = askUserFloat("Gravity: ");
+    cout << endl << "Apply force: ";
+    float forceX = askUserFloat("x: ");
+    float forceY = askUserFloat("y: ");
+    float forceZ = askUserFloat("z: ");
+	bool appliedForce = false;
+
 	// Load objects ------------------------------------------------
 	PhysicsWorld* world = new PhysicsWorld();
+	world->setGravity(vec3(0, gravity, 0));
 
-	vec3 scale = vec3(1);
-    vec3 scale2 = vec3(1.26);
-    float mass = 1;
+	vector<lineDrawable*> lines;
+    //glLineWidth(100.0f);
+
+    float mass = 50;
+    float restitution = 0.9;
+    float chainTop = 300;
+    float ballTop = 250;
+    float z = 0;
 
 	//position, scale, mass, restitution, mesh index
-	world->addParticle(new Object(vec3(0, 0, 0), scale, 1, 1, 0));
-    world->addParticle(new Object(vec3(5, 0, 0), scale2, 3, 1, 0));
 
-	world->particles[1]->velocity = vec3(-5, 0, 0);
+    // phase 2 stuff 
+    for(int i = -2; i <= 2; i++)
+    {
+        Object* obj = new Object(vec3(i * particleGap, ballTop, z), vec3(particleRadius), mass, restitution, 0);
+        world->addParticle(obj);
+        AnchoredChain* chain = new AnchoredChain(vec3(i * particleGap, chainTop, z), chainLength, obj, blue);
+		world->addForceGeneratorToIndex(world->particles.size() - 1, chain);
+		lines.push_back(chain);
+	}
 	// end of object loading ---------------------------------------
 
-    float viewVal = 25;
+    float viewVal = 400;
     mat4 proj = ortho(
         -viewVal, viewVal,
         -viewVal, viewVal,
@@ -266,11 +330,39 @@ int main()
         for (Object* obj : world->particles)
         {
             mat4 transform = obj->GetTransform();
+
             glUniformMatrix4fv(transformLoc, 1, GL_FALSE, value_ptr(transform));
             glUniform3fv(objectColorLoc, 1, value_ptr(meshes[obj->getMeshIndex()].color));
             glBindVertexArray(VAO);
 			glDrawArrays(GL_TRIANGLES, meshes[obj->getMeshIndex()].startVertex, meshes[obj->getMeshIndex()].vertexCount);
         }
+
+        //rendering lines 
+        for (lineDrawable* line : lines)
+        {
+            glDisable(GL_DEPTH_TEST);
+            line->getLineData();
+			lineVertices[0] = line->pos1;
+            lineVertices[1] = line->pos2;
+
+            glBindBuffer(GL_ARRAY_BUFFER, lineVBO);
+            glBufferSubData(GL_ARRAY_BUFFER, 0, sizeof(lineVertices), lineVertices);
+
+            glUniformMatrix4fv(transformLoc, 1, GL_FALSE, value_ptr(mat4(1.0f)));
+            glUniform3fv(objectColorLoc, 1, value_ptr(line->color));
+
+            glBindVertexArray(lineVAO);
+			glDrawArrays(GL_LINES, 0, 2);
+            glEnable(GL_DEPTH_TEST);
+        }
+
+        //phase 2 stuff
+        if(spacePressed && !appliedForce)
+        {
+			world->applyForceToIndex(0, vec3(forceX, forceY, forceZ));
+            appliedForce = true;
+			//cout << "Force applied to first particle" << endl;
+		}
 
         glfwSwapBuffers(window);
         glfwPollEvents();

@@ -61,6 +61,8 @@ add_executable (gdphysx
     "particleLink.h"
     "rod.h"
     "chain.h"
+    "anchoredChain.h"
+    "lineDrawable.h"
     "phase1FireworkSpawner.h"
 )
 

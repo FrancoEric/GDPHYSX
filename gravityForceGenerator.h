@@ -21,4 +21,9 @@ class GravityForceGenerator : public ForceGenerator
 			vec3 force = gravity * obj->mass;
 			obj->addForce(force);
 		}
+
+		void setGravity(const vec3 newGravity)
+		{
+			gravity = newGravity;
+		}
 };
