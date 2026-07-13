@@ -26,6 +26,8 @@
 #include "chain.h"
 #include "anchoredChain.h"
 #include "lineDrawable.h"
+#include "camera.h"
+
 
 //#include "phase1FireworkSpawner.h"
 
@@ -40,11 +42,22 @@ float windowHeight = 800;
 
 bool spacePressed = false;
 
+bool useOrtho = true;
+
 void Key_Callback(GLFWwindow* window, int key, int scancode, int action, int mods)
 {
     if (key == GLFW_KEY_SPACE && action == GLFW_PRESS)
     {
         spacePressed = true;
+    }
+
+    if (key == GLFW_KEY_1 && action == GLFW_PRESS)
+    {
+        useOrtho = true;
+    }
+    if (key == GLFW_KEY_2 && action == GLFW_PRESS)
+    {
+        useOrtho = false;
     }
 }
 
@@ -156,6 +169,9 @@ int main()
 
     glfwSetKeyCallback(window, Key_Callback);
 
+    Camera* activeCamera;
+    PerspectiveCamera* perspCam;
+    OrthographicCamera* orthoCam;
 
     //16ms per frame 
     constexpr std::chrono::nanoseconds timestep(16ms);
@@ -280,6 +296,16 @@ int main()
 	}
 	// end of object loading ---------------------------------------
 
+    perspCam = new PerspectiveCamera(windowWidth, windowHeight);
+    orthoCam = new OrthographicCamera(windowWidth, windowHeight);
+
+    vec3 orbitTarget = vec3(0.f, ballTop, z); // orbit around the chain/ball cluster
+    perspCam->setTarget(orbitTarget);
+    orthoCam->followTarget(orbitTarget); // sets initial camPos based on target
+
+    activeCamera = orthoCam; // start in ortho, matches your old view
+
+    /*
     float viewVal = 400;
     mat4 proj = ortho(
         -viewVal, viewVal,
@@ -291,6 +317,7 @@ int main()
     vec3 worldUp = vec3(0.f, 1.0f, 0.f);
     vec3 camCenter = vec3(0.f, 0.f, 0.f);
     mat4 view = lookAt(camPos, camCenter, worldUp);
+    */
 
 	using clock = std::chrono::high_resolution_clock;
 	auto currentTime = clock::now();
@@ -304,13 +331,33 @@ int main()
 
     while (!glfwWindowShouldClose(window))
     {
+
+        // switch active camera based on toggle
+        if (useOrtho)
+            activeCamera = orthoCam;
+        else
+            activeCamera = perspCam;
+
+        // WASD orbit rotation
+        float orbitSpeed = 100.0f * (16.0f / 1000.0f);
+        float xoffset = 0.f, yoffset = 0.f;
+
+        if (glfwGetKey(window, GLFW_KEY_A) == GLFW_PRESS) xoffset -= orbitSpeed;
+        if (glfwGetKey(window, GLFW_KEY_D) == GLFW_PRESS) xoffset += orbitSpeed;
+        if (glfwGetKey(window, GLFW_KEY_W) == GLFW_PRESS) yoffset += orbitSpeed;
+        if (glfwGetKey(window, GLFW_KEY_S) == GLFW_PRESS) yoffset -= orbitSpeed;
+
+        if (xoffset != 0.f || yoffset != 0.f)
+            activeCamera->rotateCam(xoffset, yoffset);
+
         glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
-
         glUseProgram(shaderProgram);
-
+        activeCamera->Update(shaderProgram);
+        
+        /* 
         glUniformMatrix4fv(projLoc, 1, GL_FALSE, value_ptr(proj));
         glUniformMatrix4fv(viewLoc, 1, GL_FALSE, value_ptr(view));
-
+        */
 		currentTime = clock::now();
 		auto dur = std::chrono::duration_cast<std::chrono::nanoseconds>(currentTime - prevTime);
 		prevTime = currentTime;
