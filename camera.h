@@ -138,7 +138,7 @@ private:
     bool firstPerson = false;
     vec3 fpOffset = vec3(0.f, 5.0f, 0.f); // eye height offset, change as needed
     
-    float radius = 200.f; // distance from object
+    float radius = 400.f; // distance from object
     vec3 target = vec3(0.f); // main object position
 
 public:
@@ -252,10 +252,10 @@ public:
 class OrthographicCamera : public Camera
 {
 private:
-    float left = -30.f;
-    float rightBound = 30.f;
-    float bottom = -30.f;
-    float top = 30.f;
+    float left = -400.f;
+    float rightBound = 400.f;
+    float bottom = -400.f;
+    float top = 400.f;
 
     float nearPlane = 0.1f;
     float farPlane = 1000.f;

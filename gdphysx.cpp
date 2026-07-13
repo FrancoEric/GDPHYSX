@@ -150,7 +150,7 @@ int main()
     if (!glfwInit())
         return -1;
 
-    GLFWwindow* window = glfwCreateWindow(windowWidth, windowHeight, "Assignment4 Eric Franco", NULL, NULL);
+    GLFWwindow* window = glfwCreateWindow(windowWidth, windowHeight, "DayCo Engine", NULL, NULL);
     if (!window)
     {
         glfwTerminate();
