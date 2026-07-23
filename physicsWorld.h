@@ -42,6 +42,14 @@ class PhysicsWorld
 			//cout << "func called";
 		}
 
+		void applyForceAtPointToIndex(int index, vec3 force, vec3 point)
+		{
+			if(index < 0 || index >= particles.size())
+				return;
+
+			particles[index]->addForceAtPoint(force, point);
+		}
+
 		void addParticle(Object* particle)
 		{
 			particles.push_back(particle);
@@ -90,6 +98,11 @@ class PhysicsWorld
 			{
 				contactResolver.resolveContacts(contacts, deltaTime);
 			}
+		}
+
+		void PC02func(bool slow)
+		{
+			drag.PC02func(slow);
 		}
 
 	private:

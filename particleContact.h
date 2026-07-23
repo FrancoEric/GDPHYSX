@@ -50,11 +50,14 @@ class ParticleContact
 		vec3 movePerMass = contactNormal * totalMovePerMass;
 
 		vec3 posA = movePerMass * (float)(1 / particles[0]->mass);
-		particles[0]->position += posA;
+		if(particles[0]->isStatic == false)
+			particles[0]->position += posA;
+
 		if (particles[1])
 		{
 			vec3 posB = movePerMass * (float)(-1 / particles[1]->mass);
-			particles[1]->position += posB;
+			if (particles[1]->isStatic == false)
+				particles[1]->position += posB;
 		}
 
 		depth = 0;

@@ -30,8 +30,24 @@ class DragForceGenerator : public ForceGenerator
 			if (mag <= 0)
 				return;
 
-			float drag = (k1 * mag) + (k2 * mag);
+			float drag = (k1 * mag) + (k2 * mag * mag);
 			vec3 dir = normalize(vel);
 			obj->addForce(dir * -drag);
+		}
+
+		float ogk1 = k1;
+		float ogk2 = k2;
+		void PC02func(bool slow)
+		{
+			if (slow)
+			{
+				k1 = ogk1 * 20;
+				k2 = ogk2;
+			}
+			else
+			{
+				k1 = ogk1;
+				k2 = ogk2 * 0.1;
+			}
 		}
 };

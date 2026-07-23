@@ -7,9 +7,10 @@ using namespace glm;
 
 class Rod : public ParticleLink
 {
+	float restitution = 0; //always 0
+
 	public:
 		float length = 1;
-		float restitution = 0; //always 0
 
 		ParticleContact* getContact() override
 		{

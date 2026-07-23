@@ -64,6 +64,8 @@ add_executable (gdphysx
     "anchoredChain.h"
     "lineDrawable.h"
     "camera.h"
+    "stb_image.h"
+    "PC02wheel.h"
     "phase1FireworkSpawner.h"
 )
 
