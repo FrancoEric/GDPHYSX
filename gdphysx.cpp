@@ -52,6 +52,10 @@ bool enterPressed = false;
 
 bool useOrtho = true;
 
+float snakeSpeed = 100.f;
+float snakeHeading = 0.f; // radians
+float turnSpeed = 3.f; // radians per second
+
 void Key_Callback(GLFWwindow* window, int key, int scancode, int action, int mods)
 {
     if (key == GLFW_KEY_SPACE && (action == GLFW_PRESS || action == GLFW_REPEAT))
@@ -350,6 +354,7 @@ int main()
     float restitution = 0.9;
 	float rodLength = 100;
 
+
 	float arenaHalfWidth = 400;
     vec3 arenaCorners[4] = {
         vec3(-arenaHalfWidth, -arenaHalfWidth, 0), //bot left
@@ -412,6 +417,23 @@ int main()
 
     while (!glfwWindowShouldClose(window))
     {
+
+        //  frame delta time (for steering, camera, anything per-frame)
+        currentTime = clock::now();
+        auto dur = std::chrono::duration_cast<std::chrono::nanoseconds>(currentTime - prevTime);
+        prevTime = currentTime;
+        currentNS += dur;
+        float deltaTime = dur.count() / (float)(1E09); // real seconds since last frame
+
+        // snake steering 
+        if (glfwGetKey(window, GLFW_KEY_D) == GLFW_PRESS) 
+            snakeHeading += turnSpeed * deltaTime;
+        if (glfwGetKey(window, GLFW_KEY_A) == GLFW_PRESS) 
+            snakeHeading -= turnSpeed * deltaTime;
+
+        vec3 dir = vec3(cos(snakeHeading), sin(snakeHeading), 0.f);
+        snakeHead->position += dir * snakeSpeed * deltaTime;
+
         if (!useManualCam)
         {
             // switch active camera based on toggle
@@ -444,11 +466,7 @@ int main()
             glUniformMatrix4fv(projLoc, 1, GL_FALSE, value_ptr(proj));
             glUniformMatrix4fv(viewLoc, 1, GL_FALSE, value_ptr(view));
         }
-        
-		currentTime = clock::now();
-		auto dur = std::chrono::duration_cast<std::chrono::nanoseconds>(currentTime - prevTime);
-		prevTime = currentTime;
-		currentNS += dur;
+       
 
         //physics calls
         if(currentNS >= timestep)
