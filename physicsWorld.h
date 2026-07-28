@@ -19,7 +19,7 @@ class PhysicsWorld
 		ForceRegistry forceRegistry;
 		GravityForceGenerator gravity = GravityForceGenerator(vec3(0, 0, 0));
 		DragForceGenerator drag = DragForceGenerator(); //defualt ks to 0.1 if not working
-		ContactResolver contactResolver = ContactResolver(20);
+		ContactResolver contactResolver = ContactResolver(200);
 
 		void addContact(Object* obj1, Object* obj2, float restitution, vec3 contactNormal, float depth)
 		{
@@ -93,9 +93,10 @@ class PhysicsWorld
 			}
 
 			generateContacts();
-
-			if(contacts.size() > 0)
+			
+			if (contacts.size() > 0)
 			{
+				contactResolver.maxIterations = contacts.size() * 4; // scale headroom with contact count
 				contactResolver.resolveContacts(contacts, deltaTime);
 			}
 		}

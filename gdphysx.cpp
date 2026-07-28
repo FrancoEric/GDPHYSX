@@ -35,6 +35,7 @@
 #include "camera.h"
 
 
+
 //#include "phase1FireworkSpawner.h"
 //#include "PC02wheel.h"
 
@@ -55,6 +56,7 @@ bool useOrtho = true;
 float snakeSpeed = 100.f;
 float snakeHeading = 0.f; // radians
 float turnSpeed = 3.f; // radians per second
+
 
 void Key_Callback(GLFWwindow* window, int key, int scancode, int action, int mods)
 {
@@ -354,6 +356,10 @@ int main()
     float restitution = 0.9;
 	float rodLength = 100;
 
+    vector<Object*> bodySegments;
+    vector<Rod*> bodyRods;
+    float segmentSpacing = snakeHeadScale + snakeTailScale + 5.f;
+    float eatDistance;
 
 	float arenaHalfWidth = 400;
     vec3 arenaCorners[4] = {
@@ -364,7 +370,7 @@ int main()
 	};
 
 	//position, scale, mass, restitution, mesh index
-	Object* snakeHead = new Object(vec3(0, 0, 0), vec3(snakeHeadScale), mass, restitution, 1);
+    Object* snakeHead = new Object(vec3(0, 0, 0), vec3(snakeHeadScale), mass * 10.f, restitution, 1);
 	world->addParticle(snakeHead);
     Object* apple1 = new Object(vec3(100, 100, 0), vec3(appleScale), mass, restitution, 0);
     world->addParticle(apple1);
@@ -375,6 +381,9 @@ int main()
     Object* apple4 = new Object(vec3(100, -100, 0), vec3(appleScale), mass, restitution, 0);
     world->addParticle(apple4);
 	// end of object loading ---------------------------------------
+
+    eatDistance = snakeHeadScale + appleScale; // sum of radii, rough approximation
+    vector<Object*> apples = { apple1, apple2, apple3, apple4 };
 
     perspCam = new PerspectiveCamera(windowWidth, windowHeight);
     orthoCam = new OrthographicCamera(windowWidth, windowHeight);
@@ -433,6 +442,37 @@ int main()
 
         vec3 dir = vec3(cos(snakeHeading), sin(snakeHeading), 0.f);
         snakeHead->position += dir * snakeSpeed * deltaTime;
+
+        // apple eating check 
+        for (int i = 0; i < (int)apples.size();)
+        {
+            Object* apple = apples[i];
+            float dist = glm::distance(snakeHead->position, apple->position);
+            if (dist < eatDistance)
+            {
+                apple->isDestroyed = true;
+
+                Object* lastSeg = bodySegments.empty() ? snakeHead : bodySegments.back();
+                vec3 spawnDir = normalize(-dir);
+                vec3 spawnPos = lastSeg->position + spawnDir * segmentSpacing;
+
+                Object* newSeg = new Object(spawnPos, vec3(snakeTailScale), mass, restitution, 1);
+                world->addParticle(newSeg);
+
+                Rod* newRod = new Rod();
+                newRod->particles[0] = lastSeg;
+                newRod->particles[1] = newSeg;
+                newRod->length = segmentSpacing;
+                world->links.push_back(newRod);
+
+                bodySegments.push_back(newSeg);
+                bodyRods.push_back(newRod);
+
+                apples.erase(apples.begin() + i); // remove now 
+                continue; // don't increment i, vector shifted
+            }
+            i++;
+        }
 
         if (!useManualCam)
         {
