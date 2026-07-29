@@ -4,8 +4,9 @@ using namespace std;
 using namespace glm;
 
 #include "particleLink.h"
+#include "lineDrawable.h"
 
-class Rod : public ParticleLink
+class Rod : public ParticleLink, public lineDrawable
 {
 	float restitution = 0; //always 0
 
@@ -39,5 +40,12 @@ class Rod : public ParticleLink
 			contact->restitution = restitution;
 
 			return contact;
+		}
+
+		void getLineData() override
+		{
+			pos1 = particles[0]->getPosition();
+			pos2 = particles[1]->getPosition();
+			color = vec3(1);
 		}
 };	

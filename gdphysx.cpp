@@ -9,6 +9,7 @@
 
 #include <iostream>
 #include <string>
+#include <random>
 
 #define TINYOBJLOADER_IMPLEMENTATION
 #include "tiny_obj_loader.h"
@@ -54,6 +55,7 @@ bool enterPressed = false;
 bool useOrtho = true;
 
 float snakeSpeed = 100.f;
+float speedBonusPerApple = 0.5f;
 float snakeHeading = 0.f; // radians
 float turnSpeed = 3.f; // radians per second
 
@@ -223,12 +225,53 @@ GLuint loadTexture(const string& path, GLenum wrapMode = GL_CLAMP_TO_EDGE)
     return tex;
 }
 
+void spawnApple(PhysicsWorld* world, vector<Object*>& apples, float arenaHalfWidth, vec3 appleScale, float appleMass, float appleRest, int meshindex)
+{
+    random_device rd;
+    mt19937 gen(rd());
+    uniform_int_distribution<int> distrib(-arenaHalfWidth + appleScale.x, arenaHalfWidth - appleScale.x);
+
+    bool posFound = false;
+    vec3 applePos = vec3(0);
+
+    //finds a valid pos
+    while (!posFound)
+    {
+        //bot left x and top right x
+        int randX = distrib(gen);
+        applePos.x = randX;
+
+        //top left y and bot right y
+        int randY = distrib(gen);
+        applePos.y = randY;
+        
+        for (Object* obj : world->particles)
+        {
+            vec3 diff = obj->position - applePos;
+            float distanceSquared = dot(diff, diff);
+
+            float combinedRadius = obj->radius + appleScale.x;
+
+            if (distanceSquared > combinedRadius * combinedRadius)
+            {
+                posFound = true;
+                break;
+            }
+        }
+    }
+
+    Object* newApple = new Object(applePos, appleScale, appleMass, appleRest, meshindex);
+    newApple->isStatic = true;
+    world->addParticle(newApple);
+    apples.push_back(newApple);
+}
+
 int main()
 {
     if (!glfwInit())
         return -1;
 
-    GLFWwindow* window = glfwCreateWindow(windowWidth, windowHeight, "PC02 Franco", NULL, NULL);
+    GLFWwindow* window = glfwCreateWindow(windowWidth, windowHeight, "Serpent Game! Made in DayCo Engine", NULL, NULL);
     if (!window)
     {
         glfwTerminate();
@@ -346,6 +389,7 @@ int main()
 	// Load objects ------------------------------------------------
 	PhysicsWorld* world = new PhysicsWorld();
 	world->setGravity(vec3(0, 0, 0));
+    world->hasCollisions = false;
 
 	vector<lineDrawable*> lines;
 
@@ -361,6 +405,14 @@ int main()
     float segmentSpacing = snakeHeadScale + snakeTailScale + 5.f;
     float eatDistance;
 
+    //apple spawning 
+    int initialApples = 10;
+    int applesPerSpawn = 2;
+    bool AppleEaten = false;
+
+    int applesEaten = 0;
+    int applesToWin = 100;
+
 	float arenaHalfWidth = 400;
     vec3 arenaCorners[4] = {
         vec3(-arenaHalfWidth, -arenaHalfWidth, 0), //bot left
@@ -372,18 +424,15 @@ int main()
 	//position, scale, mass, restitution, mesh index
     Object* snakeHead = new Object(vec3(0, 0, 0), vec3(snakeHeadScale), mass * 10.f, restitution, 1);
 	world->addParticle(snakeHead);
-    Object* apple1 = new Object(vec3(100, 100, 0), vec3(appleScale), mass, restitution, 0);
-    world->addParticle(apple1);
-    Object* apple2 = new Object(vec3(-100, -100, 0), vec3(appleScale), mass, restitution, 0);
-    world->addParticle(apple2);
-    Object* apple3 = new Object(vec3(-100, 100, 0), vec3(appleScale), mass, restitution, 0);
-    world->addParticle(apple3);
-    Object* apple4 = new Object(vec3(100, -100, 0), vec3(appleScale), mass, restitution, 0);
-    world->addParticle(apple4);
 	// end of object loading ---------------------------------------
 
     eatDistance = snakeHeadScale + appleScale; // sum of radii, rough approximation
-    vector<Object*> apples = { apple1, apple2, apple3, apple4 };
+    vector<Object*> apples;
+
+    for (int i = 0; i < initialApples; i++)
+    {
+        spawnApple(world, apples, arenaHalfWidth, vec3(appleScale), mass, restitution, 0);
+    }
 
     perspCam = new PerspectiveCamera(windowWidth, windowHeight);
     orthoCam = new OrthographicCamera(windowWidth, windowHeight);
@@ -424,7 +473,23 @@ int main()
     GLuint tex0Adress = glGetUniformLocation(shaderProgram, "tex0");
     unsigned int useTextureLoc = glGetUniformLocation(shaderProgram, "useTexture");
 
-    while (!glfwWindowShouldClose(window))
+    string ans = "lol";
+    while (ans != "g")
+    {
+        cout << "Welcome to the Serpent Game! Made in the DayCo Engine" << endl << endl;
+        cout << "Rules: " << endl;
+        cout << "You control a Serpent that constantly moves with A and D" << endl;
+        cout << "You eat apples to get longer and slightly faster" << endl;
+        cout << "If the Serpent hits its own tail or the edges of the screen, you lose!" << endl;
+        cout << "You win if you collect " << applesToWin << " apples!" << endl << endl;
+        cout << "Type 'g' to start the game: ";
+        cin >> ans;
+    }
+
+    bool won = false;
+    bool lost = false;
+
+    while (!glfwWindowShouldClose(window) && !won && !lost && ans == "g")
     {
 
         //  frame delta time (for steering, camera, anything per-frame)
@@ -441,7 +506,35 @@ int main()
             snakeHeading -= turnSpeed * deltaTime;
 
         vec3 dir = vec3(cos(snakeHeading), sin(snakeHeading), 0.f);
-        snakeHead->position += dir * snakeSpeed * deltaTime;
+        snakeHead->position += dir * (snakeSpeed + (speedBonusPerApple * applesEaten)) * deltaTime;
+
+        //win check
+        if (applesEaten >= applesToWin)
+            won = true;
+
+        //lose check 
+        //checks for tails first 
+        for (Object* tail : bodySegments)
+        {
+            vec3 diff = snakeHead->position - tail->position;
+            float distanceSquared = dot(diff, diff);
+
+            float combinedRadius = snakeHead->radius + tail->radius;
+
+            if (distanceSquared <= combinedRadius * combinedRadius)
+            {
+                lost = true;
+                break;
+            }
+        }
+        //checks for arena borders next
+        if (snakeHead->position.x - snakeHead->radius <= -arenaHalfWidth ||
+            snakeHead->position.x + snakeHead->radius >= arenaHalfWidth ||
+            snakeHead->position.y - snakeHead->radius <= -arenaHalfWidth ||
+            snakeHead->position.y + snakeHead->radius >= arenaHalfWidth)
+        {
+            lost = true;
+        }
 
         // apple eating check 
         for (int i = 0; i < (int)apples.size();)
@@ -468,10 +561,22 @@ int main()
                 bodySegments.push_back(newSeg);
                 bodyRods.push_back(newRod);
 
+                //lines.push_back(newRod);
+
                 apples.erase(apples.begin() + i); // remove now 
+                AppleEaten = true;
+                applesEaten++;
                 continue; // don't increment i, vector shifted
             }
             i++;
+        }
+        if (AppleEaten)
+        {
+            for (int i = 0; i < applesPerSpawn; i++)
+            {
+                spawnApple(world, apples, arenaHalfWidth, vec3(appleScale), mass, restitution, 0);
+            }
+            AppleEaten = false;
         }
 
         if (!useManualCam)
@@ -560,6 +665,12 @@ int main()
     glDeleteVertexArrays(1, &VAO);
     glDeleteBuffers(1, &VBO);
     glfwTerminate();
+
+    if (won)
+        cout << endl << "You won!" << endl;
+    if (lost)
+        cout << endl << "You lost!" << endl;
+    cout << "Collected apples: " << applesEaten << endl << endl;
 
 	return 0;
 }

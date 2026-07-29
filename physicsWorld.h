@@ -21,6 +21,8 @@ class PhysicsWorld
 		DragForceGenerator drag = DragForceGenerator(); //defualt ks to 0.1 if not working
 		ContactResolver contactResolver = ContactResolver(200);
 
+		bool hasCollisions = true;
+
 		void addContact(Object* obj1, Object* obj2, float restitution, vec3 contactNormal, float depth)
 		{
 			ParticleContact* newContact = new ParticleContact();
@@ -125,7 +127,8 @@ class PhysicsWorld
 		{
 			contacts.clear();
 
-			getOverlaps();
+			if(hasCollisions)
+				getOverlaps();
 
 			for(ParticleLink* link : links)
 			{

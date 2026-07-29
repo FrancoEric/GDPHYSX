@@ -27,7 +27,7 @@ class ContactResolver
                 {
                     float sepSpeed = contact->getSeparatingSpeed();
 
-                    if (sepSpeed < minClosing)
+                    if ((sepSpeed < 0 || contact->depth > 0) && sepSpeed < minClosing)
                     {
                         minClosing = sepSpeed;
                         chosen = contact;
@@ -37,8 +37,16 @@ class ContactResolver
                 if (!chosen)
                     break;
 
+                //std::cout << "Before: "
+                //    << chosen->depth << " "
+                //    << chosen->getSeparatingSpeed() << std::endl;
+
                 chosen->resolve(deltaTime);
 				currentIterations++;
+
+                //std::cout << "After : "
+                //    << chosen->depth << " "
+                //    << chosen->getSeparatingSpeed() << std::endl;
 			}
 		}
 };
