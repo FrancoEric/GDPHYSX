@@ -66,10 +66,6 @@ void Key_Callback(GLFWwindow* window, int key, int scancode, int action, int mod
     {
         spacePressed = true;
     }
-    else
-	{
-		spacePressed = false;
-	}
 
     if (key == GLFW_KEY_ENTER && (action == GLFW_PRESS || action == GLFW_REPEAT))
     {
@@ -302,6 +298,7 @@ int main()
     vector<GLuint> textures;
     vector<MeshData> meshes;
 
+    textures.push_back(loadTexture("3D/snake head.png"));
 	textures.push_back(loadTexture("3D/green-grass.jpg"));
 
     //static colors, 19
@@ -325,8 +322,12 @@ int main()
     vec3 navy = vec3(0.0f, 0.0f, 0.5f);
     vec3 teal = vec3(0.f, 0.5f, 0.5f);
 
+    int snakeHeadMesh = 0;
+    int snakeBodyMesh = 2;
+    int appleMesh = 1;
+
 	//path, texture, useTexture, color, fullVertexData array
-	//meshes.push_back(loadModel("3D/sphere.obj", textures[0], false, white, fullVertexData));
+	meshes.push_back(loadModel("3D/sphere.obj", textures[0], true, white, fullVertexData));
  //   meshes.push_back(loadModel("3D/sphere.obj", black, fullVertexData));
     meshes.push_back(loadModel("3D/sphere.obj", textures[0], false, red, fullVertexData));
     meshes.push_back(loadModel("3D/sphere.obj", textures[0], false, green, fullVertexData));
@@ -411,7 +412,7 @@ int main()
     bool AppleEaten = false;
 
     int applesEaten = 0;
-    int applesToWin = 100;
+    int applesToWin = 50;
 
 	float arenaHalfWidth = 400;
     vec3 arenaCorners[4] = {
@@ -422,7 +423,8 @@ int main()
 	};
 
 	//position, scale, mass, restitution, mesh index
-    Object* snakeHead = new Object(vec3(0, 0, 0), vec3(snakeHeadScale), mass * 10.f, restitution, 1);
+    Object* snakeHead = new Object(vec3(0, 0, 0), vec3(snakeHeadScale), mass * 10.f, restitution, snakeHeadMesh);
+    snakeHead->lockRotation = true;
 	world->addParticle(snakeHead);
 	// end of object loading ---------------------------------------
 
@@ -431,7 +433,7 @@ int main()
 
     for (int i = 0; i < initialApples; i++)
     {
-        spawnApple(world, apples, arenaHalfWidth, vec3(appleScale), mass, restitution, 0);
+        spawnApple(world, apples, arenaHalfWidth, vec3(appleScale), mass, restitution, appleMesh);
     }
 
     perspCam = new PerspectiveCamera(windowWidth, windowHeight);
@@ -473,23 +475,21 @@ int main()
     GLuint tex0Adress = glGetUniformLocation(shaderProgram, "tex0");
     unsigned int useTextureLoc = glGetUniformLocation(shaderProgram, "useTexture");
 
-    string ans = "lol";
-    while (ans != "g")
-    {
-        cout << "Welcome to the Serpent Game! Made in the DayCo Engine" << endl << endl;
-        cout << "Rules: " << endl;
-        cout << "You control a Serpent that constantly moves with A and D" << endl;
-        cout << "You eat apples to get longer and slightly faster" << endl;
-        cout << "If the Serpent hits its own tail or the edges of the screen, you lose!" << endl;
-        cout << "You win if you collect " << applesToWin << " apples!" << endl << endl;
-        cout << "Type 'g' to start the game: ";
-        cin >> ans;
-    }
+
+
+    cout << "Welcome to the Serpent Game! Made in the DayCo Engine" << endl << endl;
+    cout << "Rules: " << endl;
+    cout << "You control a Serpent that constantly moves with A and D" << endl;
+    cout << "You eat apples to get longer and slightly faster" << endl;
+    cout << "If the Serpent hits its own tail or the edges of the screen, you lose!" << endl;
+    cout << "You win if you collect " << applesToWin << " apples!" << endl << endl;
+    cout << "Press SPACE in the game window to start moving";
+
 
     bool won = false;
     bool lost = false;
 
-    while (!glfwWindowShouldClose(window) && !won && !lost && ans == "g")
+    while (!glfwWindowShouldClose(window) && !won && !lost)
     {
 
         //  frame delta time (for steering, camera, anything per-frame)
@@ -506,7 +506,8 @@ int main()
             snakeHeading -= turnSpeed * deltaTime;
 
         vec3 dir = vec3(cos(snakeHeading), sin(snakeHeading), 0.f);
-        snakeHead->position += dir * (snakeSpeed + (speedBonusPerApple * applesEaten)) * deltaTime;
+        if(spacePressed)
+            snakeHead->position += dir * (snakeSpeed + (speedBonusPerApple * applesEaten)) * deltaTime;
 
         //win check
         if (applesEaten >= applesToWin)
@@ -549,7 +550,7 @@ int main()
                 vec3 spawnDir = normalize(-dir);
                 vec3 spawnPos = lastSeg->position + spawnDir * segmentSpacing;
 
-                Object* newSeg = new Object(spawnPos, vec3(snakeTailScale), mass, restitution, 1);
+                Object* newSeg = new Object(spawnPos, vec3(snakeTailScale), mass, restitution, snakeBodyMesh);
                 world->addParticle(newSeg);
 
                 Rod* newRod = new Rod();
@@ -574,7 +575,7 @@ int main()
         {
             for (int i = 0; i < applesPerSpawn; i++)
             {
-                spawnApple(world, apples, arenaHalfWidth, vec3(appleScale), mass, restitution, 0);
+                spawnApple(world, apples, arenaHalfWidth, vec3(appleScale), mass, restitution, appleMesh);
             }
             AppleEaten = false;
         }
@@ -671,6 +672,8 @@ int main()
     if (lost)
         cout << endl << "You lost!" << endl;
     cout << "Collected apples: " << applesEaten << endl << endl;
+    string temp;
+    cin >> temp;
 
 	return 0;
 }

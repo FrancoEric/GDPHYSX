@@ -17,7 +17,8 @@ class Object
 		position = position + velocity * deltaTime + (0.5f) * (acceleration * deltaTime * deltaTime);
 
 		vec3 angleChange = angularVelocity * deltaTime;
-		rotation += angleChange;
+		if (!lockRotation)
+			rotation += angleChange;
 	}
 
 	void updateVel(float deltaTime)
@@ -65,6 +66,7 @@ class Object
 		vec3 angularVelocity = vec3(0); 
 		float angularDamping = 0.9;
 		bool isStatic = false;
+		bool lockRotation = false;
 
 		Object(vec3 position, vec3 scale, float mass, float resti, int meshIndex) 
 		{
