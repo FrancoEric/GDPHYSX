@@ -423,7 +423,7 @@ int main()
 	};
 
 	//position, scale, mass, restitution, mesh index
-    Object* snakeHead = new Object(vec3(0, 0, 0), vec3(snakeHeadScale), mass * 10.f, restitution, snakeHeadMesh);
+    Object* snakeHead = new Object(vec3(0, 0, 0), vec3(snakeHeadScale), mass * 100.f, restitution, snakeHeadMesh);
     snakeHead->lockRotation = true;
 	world->addParticle(snakeHead);
 	// end of object loading ---------------------------------------
@@ -508,6 +508,8 @@ int main()
         vec3 dir = vec3(cos(snakeHeading), sin(snakeHeading), 0.f);
         if(spacePressed)
             snakeHead->position += dir * (snakeSpeed + (speedBonusPerApple * applesEaten)) * deltaTime;
+
+        snakeHead->rotation.z = snakeHeading - glm::radians(73.f);
 
         //win check
         if (applesEaten >= applesToWin)
